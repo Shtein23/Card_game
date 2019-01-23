@@ -1,0 +1,148 @@
+<html lang="ru">
+<head>
+    <link rel="icon" type="image/png" href="/images/clovers.png" />
+    <title>Многопользовательская карточная игра "Дурак"</title>
+    <style>
+        canvas {
+            width: 100%;
+            height: 100%;
+            border: 5px solid #000000;
+        }
+    </style>
+    <script src="/socket.io/socket.io.js?x15588"></script>
+    <meta charset="UTF-8">
+    <script src="/js/popper.min.js"></script>
+    <link rel="stylesheet" href="/css/bootstrap.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/jquery-3.3.1.js"></script>
+    <script src="/js/AFK_Kicker.js"></script>
+    <script src="/js/script.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+</head>
+<body>
+<div id="name-prompt-overlay">
+    <div id="name-prompt-container">
+        <form id="name-form">
+            <div class="input-group">
+                <input type="text" class="form-control" id="name-input" placeholder="Nickname" autocomplete="off" />
+                <button class="input-group-addon" id="name-submit">
+            Play
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+    <!-- Modal -->
+    <div class="modal fade" id="NewRoom" tabindex="-1" role="dialog" aria-labelledby="RoomCenterTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="RoomLongTitle">Настройка игры</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body pb-0">
+                    <form id="nameroom-form">
+                        <div class="form-group">
+                            <label for="RoomName">Имя комнаты</label>
+                            <input type="text" class="form-control" id="RoomName" placeholder="Название комнаты" name="roomname" autocomplete="off">
+                            <div class="modal-footer p-0 pt-3">
+                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Закрыть</button>
+                                <button type="button" class="btn btn-primary" id="create">Создать</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="row col-12 p-0 m-0">
+        <div class="col-2 w-100 p-0" >
+            <div class="d-flex justify-content-between">
+                <h3>Rooms</h3>
+                <button type="button" class="btn btn-success" data-toggle="modal" id="crroom">Create</button>  <!--data-target="#NewRoom"-->
+            </div>
+            <div class="list-group" id="room">
+                <!--<button type="button" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" id="testroom">-->
+                    <!--Test room-->
+                    <!--<span class="badge badge-primary badge-pill" id="pl">0</span>-->
+                <!--</button>-->
+            </div>
+        </div>
+        <div class="col-8 p-0 " id="canvas">
+            <!--<canvas id="canvas">-->
+            <!--<div class="w-100 h-100 d-flex" style="z-index: 2;filter:alpha(opacity=0);">-->
+                <!--<div class="col-6 h-100 p-0 m-0 d-flex align-items-start flex-column" style="filter:alpha(opacity=0);">-->
+                    <!--<div id="nt-yr-name gradient" style="height: 40px;width: 100px;filter:alpha(opacity=0);">-->
+
+                    <!--</div>-->
+                    <!--<div id="yr-name gradient" style="height: 40px;width: 100px;filter:alpha(opacity=0);">-->
+
+                    <!--</div>-->
+                <!--</div>-->
+                <!--<div class="col-6 h-100 p-0 m-0">-->
+
+                <!--</div>-->
+            <!--</div>-->
+            <!--<div class="h-100 w-100" style="z-index: 3">-->
+                <div style="height: 22%" class="d-flex justify-content-between">
+                    <div class="h-100 col-2 p-0">
+                        <div id="nt-yr-name" class="w-100 gradient text-truncate font-weight-bold text-light">
+                            <!--<h4 class="m-0">-->
+                                <!--dawdawd-->
+                            <!--</h4>-->
+                        </div>
+
+                    </div>
+                    <div id="hand1" class="h-100 d-flex justify-content-center card23 col-8 p-0">
+
+                    </div>
+                    <div class="h-100 col-2 p-0">
+
+                    </div>
+                </div>
+                <div  style="height: 56%" class="d-flex w-100">
+                    <div id="deck" class="w-25 h-100 d-flex justify-content-center card23">
+
+                    </div>
+                    <div id="game" class="w-50 h-100">
+                        <div id="move"></div>
+                        <div id="cover"></div>
+                    </div>
+                    <div id="hangup" class="w-25 h-100 d-flex justify-content-center card23">
+
+                    </div>
+                </div>
+                <div style="height: 22%" class="d-flex justify-content-between">
+                    <div class="h-100 col-2 p-0 d-flex align-items-end">
+                        <div id="yr-name" class="w-100 gradient1 text-truncate font-weight-bold text-light " style="display:none;">
+                            <!--style="height: 40px;width: 100px;"-->
+                            <!--<h4 class="m-0">-->
+                                <!--dwadwa-->
+                            <!--</h4>-->
+                        </div>
+                    </div>
+                    <div id="hand2" class="h-100 w-100 d-flex justify-content-center card23 col-8 p-0">
+
+                    </div>
+                    <div class="h-100 col-2 p-0">
+
+                    </div>
+                </div>
+            <!--</div>-->
+            <!--</canvas>-->
+        </div>
+        <div class="col-2 p-0" id="log">
+            <button type="button" class="btn btn-danger" id="quit" disabled="disabled">Выйти</button>
+            <button type="button" class="btn" id="ready" disabled="disabled">Готов</button>
+            <button type="button" class="btn" id="end">Закончить ход</button>
+            <button type="button" class="btn" id="take">Взять карты</button>
+        </div>
+    </div>
+
+</body>
+<!--<script src="/static/game.js?x15588"></script>-->
+</html>

@@ -1,0 +1,120 @@
+.disp{
+    display: block!important;
+}
+#trcard{
+    -moz-transition: all 0.25s;
+    -o-transition: all 0.25s;
+    -webkit-transition: all 0.25s;
+    transition: all 0.25s;
+    transform: rotate(90deg);
+}
+#trcard:hover {
+    -ms-transform: scale(1.05);
+    -webkit-transform: translateX(20px) scale(1.02);
+    transform: translateX(20px) scale(1.02) rotate(90deg);
+    z-index: 50;
+}
+#game {
+    position: relative;}
+#move,
+#cover {
+    /*width: 100%;*/
+    /*height: 100%;*/
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+#cover{
+    z-index: 10;
+}
+.green{background-color: green;height: 100px}
+.blue{background-color: blue;height: 100px}
+.card23 IMG{ position: relative;}
+#hand2{overflow: hidden;}
+#hand1{overflow: hidden;}
+#deck{overflow: hidden;}
+.h2card{
+    -moz-transition: all 0.35s;
+    -o-transition: all 0.35s;
+    -webkit-transition: all 0.35s;
+    transition: all 0.35s;
+}
+.h1card{
+    -moz-transition: all 0.35s;
+    -o-transition: all 0.35s;
+    -webkit-transition: all 0.35s;
+    transition: all 0.35s;
+}
+.h2card:hover{
+    -ms-transform: scale(1.05);
+    -webkit-transform: translateY(-40px) scale(1.02);
+    transform: translateY(-40px) scale(1.02);
+    z-index: 50;
+    }
+.h1card:hover{
+    -ms-transform: scale(1.05);
+    -webkit-transform: translateY(40px) scale(1.02);
+    transform: translateY(40px) scale(1.02);
+    z-index: 50;
+  }
+
+.card0{z-index: 1;left: 100px}
+.card1{z-index: 2;left: 60px}
+.card2{z-index: 3;left: 20px}
+.card3{z-index: 4;left: -20px}
+.card4{z-index: 5;left: -60px}
+.card5{z-index: 6;left: -100px}
+#quit{
+    display: none;
+}
+#ready{
+    display: none;
+}
+#end{
+    display: none;
+}
+#take{
+    display: none;
+}
+#canvas{
+    width: 100%;
+    height: 100%;
+    border: 5px solid black;
+    background: url(/images/FON.png);
+    background-position: center;
+}
+#name-prompt-overlay {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(49, 49, 49, 0.5);
+    z-index: 100;
+}
+
+#name-prompt-container {
+    position: absolute;
+    width: 490px;
+    height: 100px;
+    top: 50%;
+    right: 0;
+    left: 0;
+    margin:  -50px auto;
+    padding: 33px;
+    background: #bbb;
+    z-index: 101;
+    border-radius: 10px;
+}
+
+#name-submit:hover {
+    cursor: pointer;
+}
+.gradient {
+    background-image: linear-gradient(140deg,rgb(0, 0, 0) 40%,rgba(255, 255, 255, 0) 85%);
+}
+.gradient1 {
+    background-image: linear-gradient(50deg,rgb(0, 0, 0) 40%,rgba(255, 255, 255, 0) 85%);
+}
