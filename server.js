@@ -114,6 +114,8 @@ function whose_turn(side, sock1, sock2, hand1, hand2){
         for (i = 0; i < hand1.length; ++i) {
             io.to(sock1).emit('u-turn', {got: hand1[i]})
         }
+        io.to(sock1).emit('turn1')
+        io.to(sock2).emit('turn2')
     } else if (side === 2) {
         for (i = 0; i < hand1.length; ++i) {
             io.to(sock1).emit('nu-turn', {got: hand1[i]})
@@ -121,6 +123,8 @@ function whose_turn(side, sock1, sock2, hand1, hand2){
         for (j = 0; j < hand2.length; ++j) {
             io.to(sock2).emit('u-turn', {got: hand2[j]})
         }
+        io.to(sock1).emit('turn2')
+        io.to(sock2).emit('turn1')
     }
 }
 
@@ -166,39 +170,51 @@ io.on('connection', function(socket) {
     for (r = 0; r < rooms.length;++r){
         io.to(socket.id).emit('add-room', {roomname: rooms[r].name, roomid: r})
     }
+    //коннект нового игрока
+    socket.on('new', function (data) {
+        players[socket.id] = {
+            name: data.name,
+            ready: 0,
+            intable: 100
+        };
+
+    });
     // создание комнаты
     socket.on('create-room', function (data) {
         rooms[roomid] ={
-            name: data.roomname,
+            name: data.roomname,    //имя комнаты
             ch1: {
-                ch1id: 0,
-                hand1: [],
-                kozr1: []
+                ch1id: 0,           //сокет(идентификатор игрока)
+                hand1: [],          //карты, находящиеся у данного игрока
+                kozr1: []           //отдельно помещенные козырные карты и руки
             },
             ch2: {
-                ch2id: 0,
-                hand2: [],
-                kozr2: []
+                ch2id: 0,           //сокет(идентификатор игрока)
+                hand2: [],          //карты, находящиеся у данного игрока
+                kozr2: []           //отдельно помещенные козырные карты и руки
             },
-            pl: 0,
-            turn: 0,
+            pl: 0,                  //количество игроков в комнате
+            turn: 0,                //переменная, отвечающая за то, кто сейчас ходит
             game: {
-                move: [],
-                cover: []
+                move: [],           //карты, которыми игрок сходит
+                cover: []           //карты, которыми другой игрок побился
             },
             deck: {
-                cards: [],
+                cards: [],          //колода карт
                 //1-C,2-D,3-H,s-4
-                trumpcard: 0
+                trumpcard: 0        //так называемая козырная карта, по ней определяются козырь, она же пояляется под
+                                    //колодой
             },
-            hangup: [],
-            state: 0,
+            hangup: [],             //карты, отправленные в биту
+            state: 0,               //состояние комнаты, меняется при начале и оконуиниии игры
         };
-        io.sockets.emit('add-room', {roomname: rooms[+roomid].name, roomid: +roomid});
+        io.sockets.emit('add-room', {roomname: rooms[+roomid].name, roomid: +roomid});//отправка всем пользователям для
+        //сообщения о создании новой комнаты, где у клиентов она появится в списке
+        socket.emit('in-room',{room: +roomid})
         ++roomid;
     })
 
-    // подключение к тестовой комнате
+    // подключение к комнате
     socket.on('connect-room', function (data) {
 
         if ((rooms[data.id].ch1.ch1id === 0) && (rooms[data.id].ch2.ch2id !== socket.id)){
@@ -232,7 +248,7 @@ io.on('connection', function(socket) {
             rooms[data.id].state = 1;
         }
     });
-
+    //дисконнект из комнаты
     socket.on('disconnect-room', function() {
         if (rooms[players[socket.id].intable].ch1.ch1id === socket.id) {
 
@@ -286,6 +302,7 @@ io.on('connection', function(socket) {
 
 
     });
+    //обработка нажатия кнопки "готов" и возможное начало игры
     socket.on('ready', function () {
         if(players[socket.id].ready === 1){
             players[socket.id].ready = 0;
@@ -339,13 +356,15 @@ io.on('connection', function(socket) {
                     hand1: rooms[players[socket.id].intable].ch1.hand1,
                     hand2: rooms[players[socket.id].intable].ch2.hand2.length,
                     koz:rooms[players[socket.id].intable].deck.trumpcard,
-                    koz1: rooms[players[socket.id].intable].deck.trumpcard % 10
+                    koz1: rooms[players[socket.id].intable].deck.trumpcard % 10,
+                    n: rooms[players[socket.id].intable].deck.cards.length
                 });
                 io.to(rooms[players[socket.id].intable].ch2.ch2id).emit('game-start',{
                     hand1: rooms[players[socket.id].intable].ch2.hand2,
                     hand2: rooms[players[socket.id].intable].ch1.hand1.length,
                     koz:rooms[players[socket.id].intable].deck.trumpcard,
-                    koz1: rooms[players[socket.id].intable].deck.trumpcard % 10
+                    koz1: rooms[players[socket.id].intable].deck.trumpcard % 10,
+                    n: rooms[players[socket.id].intable].deck.cards.length
                 });
 
 
@@ -379,41 +398,27 @@ io.on('connection', function(socket) {
         }
     });
 
-    socket.on('new', function (data) {
-        players[socket.id] = {
-            name: data.name,
-            ready: 0,
-            intable: 100
-        };
-
-    });
-
+    //дисконнект с сервера(перезагрузка страницы, закрытие вкладки)
     socket.on('disconnect', function() {
         if (players[socket.id] && rooms[players[socket.id].intable]) {
             if (rooms[players[socket.id].intable].ch1.ch1id === socket.id) {
-
                 if (rooms[players[socket.id].intable].pl === 2) {
                         if (rooms[players[socket.id].intable].state === 2) {
                             io.to(rooms[players[socket.id].intable].ch2.ch2id).emit('win')
                         }
                     }
-
-
                 rooms[players[socket.id].intable].ch1.ch1id = 0;
                 rooms[players[socket.id].intable].ch1.hand1 = [];
                 rooms[players[socket.id].intable].pl -= 1;
                 socket.broadcast.emit('not-full-room', {n: rooms[players[socket.id].intable].pl, id: players[socket.id].intable});
                 io.to(rooms[players[socket.id].intable].ch2.ch2id).emit('nt-yr-name1');
                 players[socket.id].ready = 0;
-
             } else if (rooms[players[socket.id].intable].ch2.ch2id === socket.id && rooms[players[socket.id].intable]) {
-
                 if (rooms[players[socket.id].intable].pl === 2) {
                         if (rooms[players[socket.id].intable].state === 2) {
                             io.to(rooms[players[socket.id].intable].ch1.ch1id).emit('win')
                     }
                 }
-
                 rooms[players[socket.id].intable].ch2.ch2id = 0;
                 rooms[players[socket.id].intable].ch2.hand2 = [];
                 rooms[players[socket.id].intable].pl -= 1;
@@ -428,7 +433,7 @@ io.on('connection', function(socket) {
         }
         delete players[socket.id]
     });
-
+    //обработка хода игрока
     socket.on('step', function (data) {
         let cd = data.card;
         let hj = rooms[players[socket.id].intable].turn;
@@ -458,7 +463,7 @@ io.on('connection', function(socket) {
                 }
                 if ((rooms[players[socket.id].intable].ch1.hand1.length === 0) &&
                     (rooms[players[socket.id].intable].deck.cards.length === 0) &&
-                    (rooms[players[socket.id].intable].ch2.hand2.length > (rooms[players[socket.id].intable].game.move.length - rooms[players[socket.id].intable].game.cover.length))){
+                    (rooms[players[socket.id].intable].ch2.hand2.length >= (rooms[players[socket.id].intable].game.move.length - rooms[players[socket.id].intable].game.cover.length))){
                     io.to(rooms[players[socket.id].intable].ch1.ch1id).emit('win');
                     io.to(rooms[players[socket.id].intable].ch2.ch2id).emit('lose')
 
@@ -508,8 +513,17 @@ io.on('connection', function(socket) {
                 for (j = 0; j < rooms[players[socket.id].intable].ch2.hand2.length; ++j) {
                     io.to(rooms[players[socket.id].intable].ch2.ch2id).emit('nu-turn',{got: rooms[players[socket.id].intable].ch2.hand2[j]})
                 }
-                io.to(rooms[players[socket.id].intable].ch1.ch1id).emit('end-btn')
-                io.to(rooms[players[socket.id].intable].ch2.ch2id).emit('take-btn')
+                if ((rooms[players[socket.id].intable].ch2.hand2.length === 0) &&
+                    (rooms[players[socket.id].intable].deck.cards.length === 0) &&
+                    (rooms[players[socket.id].intable].ch2.hand2.length >= (rooms[players[socket.id].intable].game.move.length - rooms[players[socket.id].intable].game.cover.length))){
+                    io.to(rooms[players[socket.id].intable].ch2.ch2id).emit('win');
+                    io.to(rooms[players[socket.id].intable].ch1.ch1id).emit('lose')
+
+                } else{
+                    io.to(rooms[players[socket.id].intable].ch1.ch1id).emit('end-btn')
+                    io.to(rooms[players[socket.id].intable].ch2.ch2id).emit('take-btn')
+                }
+
 
             }
 
@@ -537,12 +551,6 @@ io.on('connection', function(socket) {
                 }
                 for (j = 0; j < rooms[players[socket.id].intable].ch2.hand2.length; ++j) {
                     io.to(rooms[players[socket.id].intable].ch2.ch2id).emit('nu-turn',{got: rooms[players[socket.id].intable].ch2.hand2[j]})
-                }
-                if ((rooms[players[socket.id].intable].ch2.hand2.length === 0) &&
-                    (rooms[players[socket.id].intable].deck.cards.length === 0) &&
-                    (rooms[players[socket.id].intable].ch1.hand1.length > (rooms[players[socket.id].intable].game.move.length - rooms[players[socket.id].intable].game.cover.length))){
-                    io.to(rooms[players[socket.id].intable].ch2.ch2id).emit('win')
-                    io.to(rooms[players[socket.id].intable].ch1.ch1id).emit('lose')
                 }
 
                 if ((rooms[players[socket.id].intable].ch2.hand2.length === 0) &&
@@ -591,17 +599,24 @@ io.on('connection', function(socket) {
                 for (j = 0; j < rooms[players[socket.id].intable].ch1.hand1.length; ++j) {
                     io.to(rooms[players[socket.id].intable].ch1.ch1id).emit('nu-turn',{got: rooms[players[socket.id].intable].ch1.hand1[j]})
                 }
-                io.to(rooms[players[socket.id].intable].ch2.ch2id).emit('end-btn')
-                io.to(rooms[players[socket.id].intable].ch1.ch1id).emit('take-btn')
+                if ((rooms[players[socket.id].intable].ch1.hand1.length === 0) &&
+                    (rooms[players[socket.id].intable].deck.cards.length === 0) &&
+                    (rooms[players[socket.id].intable].ch2.hand2.length >= (rooms[players[socket.id].intable].game.move.length - rooms[players[socket.id].intable].game.cover.length))){
+                    io.to(rooms[players[socket.id].intable].ch1.ch1id).emit('win');
+                    io.to(rooms[players[socket.id].intable].ch2.ch2id).emit('lose')
+
+                } else {
+
+                    io.to(rooms[players[socket.id].intable].ch2.ch2id).emit('end-btn')
+                    io.to(rooms[players[socket.id].intable].ch1.ch1id).emit('take-btn')
+                }
             }
 
         }
 
     });
-
+    //обработка события, если игрок решил взять карты
     socket.on('take', function () {
-
-
         if (socket.id === rooms[players[socket.id].intable].ch1.ch1id){
             let got1 = [];
             for (k = 0; k < rooms[players[socket.id].intable].ch2.hand2.length; ++k) {
@@ -656,7 +671,7 @@ io.on('connection', function(socket) {
 
 
     });
-
+    //возможность докинуть карты, если второй игрок берет карты
     socket.on('more-card', function (data) {
         let cd1 = data.card;
         // io.to(socket.id).emit('hand2', {card: cd1});
@@ -681,6 +696,27 @@ io.on('connection', function(socket) {
                 }
 
 
+            } else {
+                let got1 = [];
+                for (k = 0; k < rooms[players[socket.id].intable].ch1.hand1.length; ++k) {
+                    for (n = 0; n < rooms[players[socket.id].intable].game.move.length; ++n){
+                        if ((rooms[players[socket.id].intable].ch1.hand1[k]/10^0) === (rooms[players[socket.id].intable].game.move[n]/10^0)) {
+                            got1.push(rooms[players[socket.id].intable].ch1.hand1[k])
+                        }
+                    }
+                    for (m = 0; m < rooms[players[socket.id].intable].game.cover.length; ++m) {
+                        // console.log(rooms[players[socket.id].intable].ch1.hand1[k]/10^0,' сравнить ранг с ',rooms[players[socket.id].intable].game.cover[m]/10^0);
+                        if ((rooms[players[socket.id].intable].ch1.hand1[k]/10^0) === (rooms[players[socket.id].intable].game.cover[m]/10^0)) {
+                            got1.push(rooms[players[socket.id].intable].ch1.hand1[k])
+                        }
+                    }
+                }
+                for (i = 0; i< got1.length;++i){
+                    io.to(rooms[players[socket.id].intable].ch2.ch2id).emit('ready-to-take', {got: got1[i]});
+                }
+                for (j = 0; j < rooms[players[socket.id].intable].ch1.hand1.length; ++j) {
+                    io.to(rooms[players[socket.id].intable].ch1.ch1id).emit('nu-turn',{got: rooms[players[socket.id].intable].ch1.hand1[j]})
+                }
             }
 
         } else if (socket.id === rooms[players[socket.id].intable].ch2.ch2id) {
@@ -703,13 +739,33 @@ io.on('connection', function(socket) {
 
                 }
 
+            }else {
+                let got1 = [];
+                for (k = 0; k < rooms[players[socket.id].intable].ch2.hand2.length; ++k) {
+                    for (n = 0; n < rooms[players[socket.id].intable].game.move.length; ++n){
+                        if ((rooms[players[socket.id].intable].ch2.hand2[k]/10^0) === (rooms[players[socket.id].intable].game.move[n]/10^0)) {
+                            got1.push(rooms[players[socket.id].intable].ch2.hand2[k])
+                        }
+                    }
+                    for (m = 0; m < rooms[players[socket.id].intable].game.cover.length; ++m) {
+                        if ((rooms[players[socket.id].intable].ch2.hand2[k]/10^0) === (rooms[players[socket.id].intable].game.cover[m]/10^0)) {
+                            got1.push(rooms[players[socket.id].intable].ch2.hand2[k])
+                        }
+                    }
+                }
+                for (i = 0; i< got1.length;++i){
+                    io.to(rooms[players[socket.id].intable].ch2.ch2id).emit('ready-to-take', {got: got1[i]});
+                }
+                for (j = 0; j < rooms[players[socket.id].intable].ch1.hand1.length; ++j) {
+                    io.to(rooms[players[socket.id].intable].ch1.ch1id).emit('nu-turn',{got: rooms[players[socket.id].intable].ch1.hand1[j]})
+                }
             }
 
         }
 
 
     });
-
+    //конец хода игрока, передача хода другому игроку-------------------------------------------------------------------
     socket.on('end', function () {
 
 
@@ -746,8 +802,8 @@ io.on('connection', function(socket) {
                 io.to(rooms[players[socket.id].intable].ch2.ch2id).emit('no-deck');
             }
             if (rooms[players[socket.id].intable].deck.cards.length === 0) {
-                io.to(rooms[players[socket.id].intable].ch1.ch1id).emit('no-tr');
-                io.to(rooms[players[socket.id].intable].ch2.ch2id).emit('no-tr');
+                io.to(rooms[players[socket.id].intable].ch1.ch1id).emit('no-tr', {koz1: rooms[players[socket.id].intable].deck.trumpcard % 10});
+                io.to(rooms[players[socket.id].intable].ch2.ch2id).emit('no-tr', {koz1: rooms[players[socket.id].intable].deck.trumpcard % 10});
             }
             rooms[players[socket.id].intable].ch1.hand1 = shuffle1(rooms[players[socket.id].intable].ch1.hand1,rooms[players[socket.id].intable].deck.trumpcard);
             rooms[players[socket.id].intable].ch1.kozr1 = kozr;
@@ -756,11 +812,13 @@ io.on('connection', function(socket) {
 
             io.to(rooms[players[socket.id].intable].ch1.ch1id).emit('next-step',{
                 hand1: rooms[players[socket.id].intable].ch1.hand1,
-                hand2: rooms[players[socket.id].intable].ch2.hand2.length
+                hand2: rooms[players[socket.id].intable].ch2.hand2.length,
+                n: rooms[players[socket.id].intable].deck.cards.length
             });
             io.to(rooms[players[socket.id].intable].ch2.ch2id).emit('next-step',{
                 hand1: rooms[players[socket.id].intable].ch2.hand2,
-                hand2: rooms[players[socket.id].intable].ch1.hand1.length
+                hand2: rooms[players[socket.id].intable].ch1.hand1.length,
+                n: rooms[players[socket.id].intable].deck.cards.length
             });
 
             whose_turn(rooms[players[socket.id].intable].turn, rooms[players[socket.id].intable].ch1.ch1id, rooms[players[socket.id].intable].ch2.ch2id,
@@ -793,13 +851,24 @@ io.on('connection', function(socket) {
                 rooms[players[socket.id].intable].ch2.hand2 = shuffle1(rooms[players[socket.id].intable].ch2.hand2,rooms[players[socket.id].intable].deck.trumpcard);
                 rooms[players[socket.id].intable].ch2.kozr2 = kozr;
 
+                if (rooms[players[socket.id].intable].deck.cards.length === 1) {
+                    io.to(rooms[players[socket.id].intable].ch1.ch1id).emit('no-deck');
+                    io.to(rooms[players[socket.id].intable].ch2.ch2id).emit('no-deck');
+                }
+                if (rooms[players[socket.id].intable].deck.cards.length === 0) {
+                    io.to(rooms[players[socket.id].intable].ch1.ch1id).emit('no-tr', {koz1: rooms[players[socket.id].intable].deck.trumpcard % 10});
+                    io.to(rooms[players[socket.id].intable].ch2.ch2id).emit('no-tr', {koz1: rooms[players[socket.id].intable].deck.trumpcard % 10});
+                }
+
                 io.to(rooms[players[socket.id].intable].ch1.ch1id).emit('next-step',{
                     hand1: rooms[players[socket.id].intable].ch1.hand1,
-                    hand2: rooms[players[socket.id].intable].ch2.hand2.length
+                    hand2: rooms[players[socket.id].intable].ch2.hand2.length,
+                    n: rooms[players[socket.id].intable].deck.cards.length
                 });
                 io.to(rooms[players[socket.id].intable].ch2.ch2id).emit('next-step',{
                     hand1: rooms[players[socket.id].intable].ch2.hand2,
-                    hand2: rooms[players[socket.id].intable].ch1.hand1.length
+                    hand2: rooms[players[socket.id].intable].ch1.hand1.length,
+                    n: rooms[players[socket.id].intable].deck.cards.length
                 });
 
                 whose_turn(rooms[players[socket.id].intable].turn, rooms[players[socket.id].intable].ch1.ch1id, rooms[players[socket.id].intable].ch2.ch2id,
@@ -829,31 +898,35 @@ io.on('connection', function(socket) {
                 rooms[players[socket.id].intable].ch2.hand2 = shuffle1(rooms[players[socket.id].intable].ch2.hand2,rooms[players[socket.id].intable].deck.trumpcard);
                 rooms[players[socket.id].intable].ch2.kozr2 = kozr;
 
+                if (rooms[players[socket.id].intable].deck.cards.length === 1) {
+                    io.to(rooms[players[socket.id].intable].ch1.ch1id).emit('no-deck');
+                    io.to(rooms[players[socket.id].intable].ch2.ch2id).emit('no-deck');
+                }
+                if (rooms[players[socket.id].intable].deck.cards.length === 0) {
+                    io.to(rooms[players[socket.id].intable].ch1.ch1id).emit('no-tr', {koz1: rooms[players[socket.id].intable].deck.trumpcard % 10});
+                    io.to(rooms[players[socket.id].intable].ch2.ch2id).emit('no-tr', {koz1: rooms[players[socket.id].intable].deck.trumpcard % 10});
+                }
+
                 io.to(rooms[players[socket.id].intable].ch1.ch1id).emit('next-step',{
                     hand1: rooms[players[socket.id].intable].ch1.hand1,
-                    hand2: rooms[players[socket.id].intable].ch2.hand2.length
+                    hand2: rooms[players[socket.id].intable].ch2.hand2.length,
+                    n: rooms[players[socket.id].intable].deck.cards.length
                 });
                 io.to(rooms[players[socket.id].intable].ch2.ch2id).emit('next-step',{
                     hand1: rooms[players[socket.id].intable].ch2.hand2,
-                    hand2: rooms[players[socket.id].intable].ch1.hand1.length
+                    hand2: rooms[players[socket.id].intable].ch1.hand1.length,
+                    n: rooms[players[socket.id].intable].deck.cards.length
                 });
 
                 whose_turn(rooms[players[socket.id].intable].turn, rooms[players[socket.id].intable].ch1.ch1id, rooms[players[socket.id].intable].ch2.ch2id,
                     rooms[players[socket.id].intable].ch1.hand1, rooms[players[socket.id].intable].ch2.hand2)
-
             }
-
-
-
         }
-
-
-
-
     })
 
 
 });
+//решение в лоб для отправки состояний комнат(количество игроков и блокировка входа в комнату, если мест нет)-----------
 setInterval(function() {
     for (r = 0; r<rooms.length; ++r){
         if ( rooms[r].pl === 2) {

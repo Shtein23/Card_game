@@ -2,13 +2,6 @@
 <head>
     <link rel="icon" type="image/png" href="/images/clovers.png" />
     <title>Многопользовательская карточная игра "Дурак"</title>
-    <style>
-        canvas {
-            width: 100%;
-            height: 100%;
-            border: 5px solid #000000;
-        }
-    </style>
     <script src="/socket.io/socket.io.js?x15588"></script>
     <meta charset="UTF-8">
     <script src="/js/popper.min.js"></script>
@@ -62,8 +55,8 @@
     <div class="row col-12 p-0 m-0">
         <div class="col-2 w-100 p-0" >
             <div class="d-flex justify-content-between">
-                <h3>Rooms</h3>
-                <button type="button" class="btn btn-success" data-toggle="modal" id="crroom">Create</button>  <!--data-target="#NewRoom"-->
+                <h3>Комнаты</h3>
+                <button type="button" class="btn btn-success" data-toggle="modal" id="crroom">Создать</button>  <!--data-target="#NewRoom"-->
             </div>
             <div class="list-group" id="room">
                 <!--<button type="button" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" id="testroom">-->
@@ -73,35 +66,20 @@
             </div>
         </div>
         <div class="col-8 p-0 " id="canvas">
-            <!--<canvas id="canvas">-->
-            <!--<div class="w-100 h-100 d-flex" style="z-index: 2;filter:alpha(opacity=0);">-->
-                <!--<div class="col-6 h-100 p-0 m-0 d-flex align-items-start flex-column" style="filter:alpha(opacity=0);">-->
-                    <!--<div id="nt-yr-name gradient" style="height: 40px;width: 100px;filter:alpha(opacity=0);">-->
 
-                    <!--</div>-->
-                    <!--<div id="yr-name gradient" style="height: 40px;width: 100px;filter:alpha(opacity=0);">-->
-
-                    <!--</div>-->
-                <!--</div>-->
-                <!--<div class="col-6 h-100 p-0 m-0">-->
-
-                <!--</div>-->
-            <!--</div>-->
-            <!--<div class="h-100 w-100" style="z-index: 3">-->
                 <div style="height: 22%" class="d-flex justify-content-between">
-                    <div class="h-100 col-2 p-0">
+                    <div class="h-100 col-2 p-0 d-flex flex-column" id="321">
                         <div id="nt-yr-name" class="w-100 gradient text-truncate font-weight-bold text-light">
-                            <!--<h4 class="m-0">-->
-                                <!--dawdawd-->
-                            <!--</h4>-->
+
                         </div>
 
                     </div>
                     <div id="hand1" class="h-100 d-flex justify-content-center card23 col-8 p-0">
 
                     </div>
-                    <div class="h-100 col-2 p-0">
-
+                    <div class="h-100 col-2 p-0 m-auto d-flex justify-content-center flex-column">
+                        <button type="button" class="btn m-2 p-2 btn-danger font-weight-bold text-light" id="quit" disabled="disabled">Выйти</button>
+                        <button type="button" class="btn m-2 p-2 font-weight-bold text-light" id="ready" disabled="disabled">Готов</button>
                     </div>
                 </div>
                 <div  style="height: 56%" class="d-flex w-100">
@@ -109,37 +87,34 @@
 
                     </div>
                     <div id="game" class="w-50 h-100">
-                        <div id="move"></div>
-                        <div id="cover"></div>
+                        <div id="move" class="card23 d-flex justify-content-center"></div>
+                        <div id="cover" class="card23 d-flex justify-content-center"></div>
                     </div>
                     <div id="hangup" class="w-25 h-100 d-flex justify-content-center card23">
 
                     </div>
                 </div>
                 <div style="height: 22%" class="d-flex justify-content-between">
-                    <div class="h-100 col-2 p-0 d-flex align-items-end">
+                    <div class="h-100 col-2 p-0 d-flex align-items-end flex-column-reverse" id="123">
                         <div id="yr-name" class="w-100 gradient1 text-truncate font-weight-bold text-light " style="display:none;">
-                            <!--style="height: 40px;width: 100px;"-->
-                            <!--<h4 class="m-0">-->
-                                <!--dwadwa-->
-                            <!--</h4>-->
+
                         </div>
                     </div>
                     <div id="hand2" class="h-100 w-100 d-flex justify-content-center card23 col-8 p-0">
 
                     </div>
-                    <div class="h-100 col-2 p-0">
-
+                    <div class="h-100 col-2 p-0 d-flex justify-content-center">
+                        <button type="button" class="btn m-auto p-2 font-weight-bold bg-success text-light" id="end">Закончить ход</button>
+                        <button type="button" class="btn m-auto p-2 font-weight-bold bg-success text-light" id="take">Взять карты</button>
                     </div>
                 </div>
             <!--</div>-->
             <!--</canvas>-->
         </div>
         <div class="col-2 p-0" id="log">
-            <button type="button" class="btn btn-danger" id="quit" disabled="disabled">Выйти</button>
-            <button type="button" class="btn" id="ready" disabled="disabled">Готов</button>
-            <button type="button" class="btn" id="end">Закончить ход</button>
-            <button type="button" class="btn" id="take">Взять карты</button>
+
+
+
         </div>
     </div>
 

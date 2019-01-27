@@ -1,6 +1,6 @@
 function AFK_Kicker() {}
 AFK_Kicker.TIMER = 0;
-AFK_Kicker.KICK_TIME = 120000;
+AFK_Kicker.KICK_TIME = 300000;
 AFK_Kicker.init = function() {
     AFK_Kicker.TIMER = (new Date).getTime();
     window.addEventListener('click', AFK_Kicker.resetTimer);
